@@ -50,15 +50,19 @@ class EffectEntry {
   Duration get end => delay + duration;
 
   /// Builds a sub-animation based on the properties of this entry.
+  ///
+  /// Uses [CurveTween] with [Animation.drive] instead of [CurvedAnimation]
+  /// to avoid creating a disposable object on every call. This method is
+  /// invoked from [Effect.build] during the widget build phase, so using
+  /// [CurvedAnimation] would leak instances since they are never disposed.
   Animation<double> buildAnimation(
     AnimationController controller, {
     Curve? curve,
   }) {
     int ttlT = controller.duration?.inMicroseconds ?? 0;
     int beginT = begin.inMicroseconds, endT = end.inMicroseconds;
-    return CurvedAnimation(
-      parent: controller,
-      curve: Interval(beginT / ttlT, endT / ttlT, curve: curve ?? this.curve),
+    return controller.drive(
+      CurveTween(curve: Interval(beginT / ttlT, endT / ttlT, curve: curve ?? this.curve)),
     );
   }
 }
